@@ -1,0 +1,58 @@
+workflows:
+  build_android_app:
+    name: Build and Publish WoWonder Android App
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      vars:
+        ANDROID_KEYSTORE: $CM_BUILD_DIR/WoWonder/KeyApk/zoomnearby-app.keystore  # Specify the keystore path here
+        ANDROID_KEYSTORE_PASSWORD: aoc123456
+        ANDROID_KEY_ALIAS: key0
+        ANDROID_KEY_PASSWORD: aoc123456
+        DOTNET_PATH: $CM_BUILD_DIR/dotnet
+        DOTNET: $CM_BUILD_DIR/dotnet/dotnet
+    triggering:
+      events:
+        - push
+    scripts:
+      - name: Install dotnet sdk
+        script: | 
+          wget https://dot.net/v1/dotnet-install.sh
+          chmod +x dotnet-install.sh
+          ./dotnet-install.sh --install-dir $DOTNET_PATH
+          
+      - name: Install Android Workload
+        script: | 
+          $DOTNET workload install android --source https://aka.ms/dotnet6/nuget/index.json --source https://api.nuget.org/v3/index.json
+
+      - name: Restore .NET dependencies
+        script: |
+          $DOTNET restore WoWonder/WoWonder.csproj
+
+      - name: Build the Android project
+        script: |
+          $DOTNET build WoWonder/WoWonder.csproj -c Release -t:InstallAndroidDependencies -f net8.0-android "-p:AndroidSdkDirectory=/usr/local/share/android-sdk" -p:AcceptAndroidSDKLicenses=true
+
+      - name: Publish the Android project
+        script: |
+          $DOTNET publish WoWonder/WoWonder.csproj -c Release -o ./output -p:AndroidKeyStore=True -p:AndroidSigningKeyStore=$ANDROID_KEYSTORE -p:AndroidSigningKeyAlias=$ANDROID_KEY_ALIAS -p:AndroidSigningStorePass=$ANDROID_KEYSTORE_PASSWORD -p:AndroidSigningKeyPass=$ANDROID_KEY_PASSWORD
+
+      - name: Align the APK
+        script: |
+          zipalign -v 4 ./output/com.zoomnearby.business.apk ./output/com.zoomnearby.business-aligned.apk
+
+      - name: Sign the APK
+        script: |
+          apksigner sign --ks $ANDROID_KEYSTORE --ks-key-alias $ANDROID_KEY_ALIAS --ks-pass pass:$ANDROID_KEYSTORE_PASSWORD --key-pass pass:$ANDROID_KEY_PASSWORD --out ./output/com.zoomnearby.business-aligned-signed.apk ./output/com.zoomnearby.business-aligned.apk
+
+      - name: Verify the APK
+        script: |
+          apksigner verify ./output/com.zoomnearby.business-aligned-signed.apk
+
+    artifacts:
+      - ./output/com.zoomnearby.business-aligned-signed.apk
+
+    publishing:
+      email:
+        recipients:
+          - zoomnearbybusiness@gmail.com
