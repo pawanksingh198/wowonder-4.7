@@ -39,18 +39,18 @@ workflows:
 
       - name: Align the APK
         script: |
-          zipalign -v 4 ./output/com.zoomnearby.business.apk ./output/com.zoomnearby.business-aligned.apk
+          zipalign -v 4 ./output/com.wowonder.combined.apk ./output/com.wowonder.combined-aligned.apk
 
       - name: Sign the APK
         script: |
-          apksigner sign --ks $ANDROID_KEYSTORE --ks-key-alias $ANDROID_KEY_ALIAS --ks-pass pass:$ANDROID_KEYSTORE_PASSWORD --key-pass pass:$ANDROID_KEY_PASSWORD --out ./output/com.zoomnearby.business-aligned-signed.apk ./output/com.zoomnearby.business-aligned.apk
+          apksigner sign --ks $ANDROID_KEYSTORE --ks-key-alias $ANDROID_KEY_ALIAS --ks-pass pass:$ANDROID_KEYSTORE_PASSWORD --key-pass pass:$ANDROID_KEY_PASSWORD --out ./output/com.wowonder.combined-aligned-signed.apk ./output/com.wowonder.combined-aligned.apk
 
       - name: Verify the APK
         script: |
-          apksigner verify ./output/com.zoomnearby.business-aligned-signed.apk
+          apksigner verify ./output/com.wowonder.combined-aligned-signed.apk
 
     artifacts:
-      - ./output/com.zoomnearby.business-aligned-signed.apk
+      - ./output/com.wowonder.combined-aligned-signed.apk
 
     publishing:
       email:
